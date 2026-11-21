@@ -442,7 +442,7 @@ async def check_combo(browser, prov: str, tram: str):
     ctx = await browser.new_context(locale="es-ES", user_agent=UA,
                                     viewport={"width": 1280, "height": 900})
     page = await ctx.new_page()
-    page.set_default_timeout(20000)
+    page.set_default_timeout(90000)
     await page.route("**/*", lambda r: r.abort()
                      if r.request.resource_type in ("media", "font") else r.continue_())
     try:
