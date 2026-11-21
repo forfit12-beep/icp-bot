@@ -40,7 +40,10 @@ from playwright.async_api import async_playwright
 # --------------------------------------------------------------------------- #
 # Constantes
 # --------------------------------------------------------------------------- #
-INDEX_URL = "https://sede.administracionespublicas.gob.es/icpplus/index.html"
+# La dirección antigua (sede.administracionespublicas.gob.es/icpplus/index.html) ahora solo
+# redirige a una página informativa. El formulario real con el desplegable de provincias
+# está en icp.administracionelectronica.gob.es. Se puede cambiar con la variable ICP_URL.
+INDEX_URL = os.getenv("ICP_URL", "https://icp.administracionelectronica.gob.es/icpplus/index.html").strip()
 TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()
 ENV_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 CONFIG_PATH = os.getenv("CONFIG_PATH", "config.json")
