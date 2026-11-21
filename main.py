@@ -323,7 +323,7 @@ async def telegram_loop():
 # --------------------------------------------------------------------------- #
 async def settle(page):
     try:
-        await page.wait_for_load_state("domcontentloaded", timeout=20000)
+        await page.wait_for_load_state("domcontentloaded", timeout=90000)
         await page.wait_for_timeout(800)
     except Exception:  # noqa: BLE001
         pass
