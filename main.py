@@ -323,7 +323,7 @@ async def telegram_loop():
 # --------------------------------------------------------------------------- #
 async def settle(page):
     try:
-        await page.wait_for_load_state("domcontentloaded", timeout=90000)
+        await page.wait_for_load_state("commit", timeout=90000)
         await page.wait_for_timeout(800)
     except Exception:  # noqa: BLE001
         pass
@@ -446,7 +446,17 @@ async def check_combo(browser, prov: str, tram: str):
     await page.route("**/*", lambda r: r.abort()
                      if r.request.resource_type in ("media", "font") else r.continue_())
     try:
-        await page.goto(INDEX_URL, wait_until="commit",timeout=90000)
+        _goto_ok = False
+        for _intento in range(3):
+            try:
+                await page.goto(INDEX_URL, wait_until="commit", timeout=90000)
+                _goto_ok = True
+                break
+            except Exception:
+                if _intento == 2:
+                    raise
+                await page.wait_for_timeout(5000)
+        assert _goto_ok
         await settle(page)
         await accept_cookies(page)
         if not await select_by_text(page, prov_pred(prov)):
