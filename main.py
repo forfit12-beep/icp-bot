@@ -446,7 +446,7 @@ async def check_combo(browser, prov: str, tram: str):
     await page.route("**/*", lambda r: r.abort()
                      if r.request.resource_type in ("media", "font") else r.continue_())
     try:
-        await page.goto(INDEX_URL, wait_until="domcontentloaded")
+        await page.goto(INDEX_URL, wait_until="commit")
         await settle(page)
         await accept_cookies(page)
         if not await select_by_text(page, prov_pred(prov)):
