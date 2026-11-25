@@ -463,4 +463,4 @@ async def main():
             save_cfg(cfg0)
             log.info("Provincias fijadas a tus 6: %s", ", ".join(MIS_PROVINCIAS))
     except Exception as e:
-        log.warning("No se pud
+                log.warning("Error provincias: %s", e)
