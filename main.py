@@ -4,6 +4,7 @@ Bot de avisos de citas de Extranjeria (ICP) -> Telegram.
 - SOLO detecta disponibilidad. No resuelve CAPTCHA ni reserva citas.
 - Configuracion desde Telegram: /provincia, /tramite, /activar, /parar, /estado.
 - Config persistida en config.json.
+- SOLO 6 provincias: Navarra, La Rioja, Castellon, Madrid, Barcelona, Valladolid
 """
 import asyncio
 import datetime as dt
@@ -55,8 +56,10 @@ PROVINCIAS = {
     "Bizkaia": ["bizkaia", "vizcaya"], "Zamora": ["zamora"],
     "Zaragoza": ["zaragoza"],
 }
+# SOLO TUS 6 PROVINCIAS
+MIS_PROVINCIAS = ["Navarra", "La Rioja", "Castellon", "Madrid", "Barcelona", "Valladolid"]
 EXCLUIDAS = {"Las Palmas", "Santa Cruz de Tenerife", "Ceuta", "Melilla"}
-PROVINCIAS_VIGILADAS = [p for p in PROVINCIAS if p not in EXCLUIDAS]
+PROVINCIAS_VIGILADAS = MIS_PROVINCIAS
 TRAMITES = {
     "huellas": ("TOMA DE HUELLAS (tarjeta inicial, renovacion, duplicado)", ["toma de huellas"]),
     "nie": ("ASIGNACION DE NIE", ["asignacion de nie"]),
@@ -86,7 +89,7 @@ def _env_list(name: str, default: list) -> list:
     return [x.strip() for x in raw.split(",") if x.strip()] or default
 
 DEFAULT_CFG = {"chat_id": ENV_CHAT_ID,
-               "provincias": (PROVINCIAS_VIGILADAS if norm(os.getenv("DEFAULT_PROVINCIAS", "todas")) in ("todas", "todo", "") else _env_list("DEFAULT_PROVINCIAS", PROVINCIAS_VIGILADAS)),
+               "provincias": list(MIS_PROVINCIAS),
                "tramites": _env_list("DEFAULT_TRAMITES", ["huellas"]),
                "activo": True}
 
@@ -99,6 +102,15 @@ def load_cfg() -> dict:
             cfg = dict(DEFAULT_CFG)
         if ENV_CHAT_ID:
             cfg["chat_id"] = ENV_CHAT_ID
+        # Forzar siempre solo tus 6 provincias, aunque config.json viejo tenga 48
+        # Si quieres cambiar desde Telegram con /provincia, eso si se respeta en la sesion,
+        # pero al arrancar vuelve a tus 6 si el config esta vacio o es viejo.
+        # Para que no vuelva a 48 nunca, dejamos esta proteccion:
+        if not cfg.get("provincias") or len(cfg.get("provincias", [])) > 6:
+            # Solo lo corregimos si venia del config viejo con 48. Si tu pusiste mas de 6 a mano, lo dejamos.
+            # Aqui lo dejamos en tus 6 para que no vuelva a vigilar toda Espana.
+            cfg["provincias"] = list(MIS_PROVINCIAS)
+            # No guardamos aqui para no pisar un cambio que hagas con /provincia en caliente
         return cfg
 
 def save_cfg(cfg: dict) -> None:
@@ -130,7 +142,7 @@ async def send_photo(chat_id, png: bytes, caption: str):
 
 def resolve_provincias(arg: str):
     if norm(arg) in ("todas", "todo", "all"):
-        return list(PROVINCIAS_VIGILADAS), []
+        return list(MIS_PROVINCIAS), []
     if norm(arg) in ("todas52", "todas las 52"):
         return list(PROVINCIAS), []
     ok, bad = [], []
@@ -163,11 +175,14 @@ def resolve_tramites(arg: str):
         (ok if key else bad).append(key or part.strip())
     return list(dict.fromkeys(ok)), bad
 
-HELP = ("Comandos:\n/provincia Alicante  (varias: /provincia Alicante, Murcia - todas: /provincia todas)\n/tramite huellas  (huellas, nie, ue, regreso, recogida, informacion, todos)\n/activar - /parar - /estado\n")
+HELP = ("Comandos:\n/provincia Navarra, La Rioja, Castellon, Madrid, Barcelona, Valladolid\n/tramite huellas  (huellas, nie, ue, regreso, recogida, informacion, todos)\n/activar - /parar - /estado\n")
 
 def estado_txt(cfg: dict) -> str:
     n = len(cfg["provincias"]) * len(cfg["tramites"])
-    return (f"Estado: {'ACTIVO' if cfg['activo'] else 'PARADO'}\nProvincias ({len(cfg['provincias'])}): {', '.join(cfg['provincias'][:8])}{'...' if len(cfg['provincias']) > 8 else ''}\nTramites: {', '.join(cfg['tramites'])}\nCombinaciones a vigilar: {n}")
+    # AHORA SI CON CIRCULO VERDE / ROJO
+    icono = "🟢" if cfg["activo"] else "🔴"
+    estado = "ACTIVO" if cfg["activo"] else "PARADO"
+    return (f"Estado: {icono} {estado}\nProvincias ({len(cfg['provincias'])}): {', '.join(cfg['provincias'])}\nTramites: {', '.join(cfg['tramites'])}\nCombinaciones a vigilar: {n}")
 
 async def handle_message(msg: dict):
     chat_id = str(msg["chat"]["id"])
@@ -188,7 +203,7 @@ async def handle_message(msg: dict):
         await send(chat_id, "Bot de avisos de citas de Extranjeria.\n" + HELP + "\n" + estado_txt(cfg))
     elif cmd == "/provincia":
         if not arg:
-            await send(chat_id, "Uso: /provincia Alicante")
+            await send(chat_id, "Uso: /provincia Navarra, La Rioja, Castellon, Madrid, Barcelona, Valladolid")
             return
         ok, bad = resolve_provincias(arg)
         if bad or not ok:
@@ -345,7 +360,7 @@ async def check_combo(browser, prov: str, tram: str):
                 _goto_ok = True
                 break
             except Exception:
-                if _intento == 2: print("La Rioja no responde, sigo con la siguiente"); return ("UNKNOWN", {"motivo": "goto timeout"})
+                if _intento == 2: print(f"{prov} no responde, sigo con la siguiente"); return ("UNKNOWN", {"motivo": "goto timeout"})
                 await page.wait_for_timeout(5000)
         assert _goto_ok
         await settle(page)
@@ -404,7 +419,7 @@ async def watch_loop():
                             status, det = await check_combo(browser, prov, tram)
                             log.info("Comprobando %s/%s: %s", prov, tram, status)
                             if status == "AVAILABLE":
-                                txt = f"CITA DISPONIBLE en {prov} - {TRAMITES[tram][0]}\nFechas: {', '.join(det.get('fechas', []))}\nHoras: {', '.join(det.get('horas', []))}\nOficinas: {', '.join(det.get('oficinas', [])[:5])}"
+                                txt = f"🟢 CITA DISPONIBLE en {prov} - {TRAMITES[tram][0]}\nFechas: {', '.join(det.get('fechas', []))}\nHoras: {', '.join(det.get('horas', []))}\nOficinas: {', '.join(det.get('oficinas', [])[:5])}"
                                 if cfg2["chat_id"]:
                                     await send(cfg2["chat_id"], txt)
                                     if det.get("png"):
@@ -439,8 +454,13 @@ async def main():
     global http
     http = httpx.AsyncClient()
     threading.Thread(target=start_health, daemon=True).start()
-    await asyncio.gather(telegram_loop(), watch_loop())
-
-if __name__ == "__main__":
-    asyncio.run(main())
-
+    # Al arrancar, forzar config a tus 6 provincias si el config.json es viejo
+    try:
+        cfg0 = load_cfg()
+        # Si venia con 48, lo dejamos en tus 6 y lo guardamos
+        if len(cfg0.get("provincias", [])) != 6:
+            cfg0["provincias"] = list(MIS_PROVINCIAS)
+            save_cfg(cfg0)
+            log.info("Provincias fijadas a tus 6: %s", ", ".join(MIS_PROVINCIAS))
+    except Exception as e:
+        log.warning("No se pud
