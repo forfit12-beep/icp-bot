@@ -454,10 +454,9 @@ async def check_combo(browser, prov: str, tram: str):
                 break
             except Exception:
                         if _intento == 2:
-            print("La Rioja no responde, sigo con la siguiente")
-            return
+                            if _intento == 2: print("La Rioja no responde, sigo con la siguiente"); return
                     
-                await page.wait_for_timeout(5000)
+                await page.wait_for_timeout(5000)                if _intento == 2: print("La Rioja no responde, sigo con la siguiente"); return
         assert _goto_ok
         await settle(page)
         await accept_cookies(page)
