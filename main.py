@@ -453,8 +453,10 @@ async def check_combo(browser, prov: str, tram: str):
                 _goto_ok = True
                 break
             except Exception:
-                if _intento == 2:
-                    raise
+                        if _intento == 2:
+            print("La Rioja no responde, sigo con la siguiente")
+            return
+                    
                 await page.wait_for_timeout(5000)
         assert _goto_ok
         await settle(page)
