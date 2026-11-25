@@ -464,7 +464,23 @@ async def main():
             log.info("Provincias: 6")
     except Exception as e:
         log.warning("Error provincias: %s", e)
-        except Exception as e:
+        async def main():
+    global http
+    http = httpx.AsyncClient()
+    threading.Thread(
+        target=start_health,
+        daemon=True
+    ).start()
+    cfg0 = load_cfg()
+    cfg0["provincias"] = list(MIS_PROVINCIAS)
+    save_cfg(cfg0)
+    await asyncio.gather(
+        telegram_loop(),
+        watch_loop()
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())
         log.warning("Error provincias: %s", e)
     await asyncio.gather(
         telegram_loop(),
