@@ -464,4 +464,12 @@ async def main():
             log.info("Provincias: 6")
     except Exception as e:
         log.warning("Error provincias: %s", e)
-    await asyncio.gather(te
+        except Exception as e:
+        log.warning("Error provincias: %s", e)
+    await asyncio.gather(
+        telegram_loop(),
+        watch_loop()
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())
