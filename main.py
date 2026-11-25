@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
-"""
-Bot de avisos de citas de Extranjería (ICP) -> Telegram.
-
-- SOLO detecta disponibilidad. No resuelve CAPTCHA ni reserva citas.
+            except Exception:
+                if _intento == 2:
+                    print("La Rioja no responde, sigo con la siguiente")
+                    return
+                await page.wait_for_timeout(5000)
 - Configuración desde Telegram: /provincia, /tramite, /activar, /parar, /estado.
 - Config persistida en config.json.
 
