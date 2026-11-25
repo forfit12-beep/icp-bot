@@ -463,4 +463,8 @@ async def main():
             save_cfg(cfg0)
             log.info("Provincias fijadas a tus 6: %s", ", ".join(MIS_PROVINCIAS))
     except Exception as e:
-                log.warning("Error provincias: %s", e)
+                log.warning("Error provincias: %s", e)        log.warning("Error provincias: %s", e)
+    await asyncio.gather(telegram_loop(), watch_loop())
+
+if __name__ == "__main__":
+    asyncio.run(main())
