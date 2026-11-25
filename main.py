@@ -449,7 +449,7 @@ async def check_combo(browser, prov: str, tram: str):
         _goto_ok = False
         for _intento in range(3):
             try:
-                await page.goto(INDEX_URL, wait_until="commit", timeout=90000)
+                await page.goto(INDEX_URL, wait_until="domcontentloaded", timeout=60000,
                 _goto_ok = True
                 break
             except Exception:
