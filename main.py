@@ -27,8 +27,8 @@ HEADLESS = os.getenv("HEADLESS", "1") != "0"
 WAIT_CAPTCHA = int(os.getenv("WAIT_CAPTCHA_SECONDS", "0") or 0)
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
-CYCLE_PAUSE = (60, 90)
-COMBO_PAUSE = (6, 14)
+CYCLE_PAUSE = (600, 600)  # 10 minutos entre vueltas
+COMBO_PAUSE = (30, 60)  # 30-60 seg entre provincias
 
 PROVINCIAS = {
     "Alava": ["alava", "araba"], "Albacete": ["albacete"],
